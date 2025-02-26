@@ -11,8 +11,8 @@ def generate_data(num_samples, Nr=8, N_snapshots=512, snr_range=(-10, 10)):
     y = np.zeros(num_samples)
 
     for i in range(num_samples):
-        theta_degrees = np.random.uniform(-90, 90)
-        y[i] = theta_degrees
+        theta_degrees = np.random.uniform(-32, 32)
+        y[i] = np.round(theta_degrees) + 32
 
         theta = theta_degrees / 180 * np.pi
 

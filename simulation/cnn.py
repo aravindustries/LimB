@@ -9,7 +9,7 @@ from generate_data import generate_data
 
 
 # ResNet-based model for DOA estimation (similar to what the paper describes)
-def build_resnet_model(input_shape, output_dim=1, regression=True):
+def build_resnet_model(input_shape):
 
     inputs = layers.Input(shape=input_shape)
 
@@ -64,74 +64,29 @@ def build_resnet_model(input_shape, output_dim=1, regression=True):
     # Global Average Pooling
     x = layers.GlobalAveragePooling2D()(x)
 
-    # Output layer
-    if regression:
-        outputs = layers.Dense(output_dim)(x)
-    else:
-        # For classification, use softmax activation
-        num_classes = 181  # -90 to 90 degrees with 1-degree resolution
-        outputs = layers.Dense(num_classes, activation="softmax")(x)
+    # For classification, use softmax activation
+    num_classes = 65  # -32 to 32 degrees with 1-degree resolution
+    outputs = layers.Dense(num_classes, activation="softmax")(x)
 
     # Create model
     model = models.Model(inputs=inputs, outputs=outputs)
 
-    # Compile model
-    if regression:
-        model.compile(optimizer=Adam(learning_rate=0.001), loss="mse", metrics=["mae"])
-    else:
-        model.compile(
-            optimizer=Adam(learning_rate=0.001),
-            loss="sparse_categorical_crossentropy",
-            metrics=["accuracy"],
-        )
+    model.compile(
+        optimizer=Adam(learning_rate=0.001),
+        loss="sparse_categorical_crossentropy",
+        metrics=["accuracy"],
+    )
 
     return model
 
 
-# Example of training the model
-def train_doa_model():
-    # Parameters
-    Nr = 8
-    N_snapshots = 512
-    num_samples = 10000
-    num_sources = 1  # Single source
-
-    # Generate data
-    X, y = generate_data(
-        num_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-10, 10)
-    )
-
-    # Split data into training and validation sets
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
-    # Build model
-    input_shape = (2 * Nr, N_snapshots)
-    model = build_resnet_model(input_shape, output_dim=1, regression=True)
-
-    # Train model
-    history = model.fit(
-        X_train,
-        y_train,
-        epochs=50,
-        batch_size=64,
-        validation_data=(X_val, y_val),
-        callbacks=[
-            tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True),
-            tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=5),
-        ],
-    )
-
-    return model, history
-
-
 def evaluate_model(model, snr_range=(-25, 25, 5)):
+    """Evaluate model performance at different SNR levels for classification."""
     Nr = 8
     N_snapshots = 512
     num_test_samples = 1000
 
-    rmse_results = []
+    accuracy_results = []
     snr_values = range(snr_range[0], snr_range[1] + 1, snr_range[2])
 
     for snr in snr_values:
@@ -140,22 +95,31 @@ def evaluate_model(model, snr_range=(-25, 25, 5)):
             num_test_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(snr, snr)
         )
 
-        # Predict DOA angles
+        y_test_classes = (y_test + 32).astype(int)
+
+        # Predict DOA angle classes
         y_pred = model.predict(X_test)
+        y_pred_classes = np.argmax(y_pred, axis=1)
 
-        # Calculate RMSE
-        rmse = np.sqrt(np.mean((y_pred.flatten() - y_test) ** 2))
-        rmse_results.append(rmse)
+        # Calculate accuracy
+        accuracy = np.mean(y_pred_classes == y_test_classes)
+        accuracy_results.append(accuracy * 100)  # Convert to percentage
 
-        print(f"SNR = {snr} dB, RMSE = {rmse:.2f} degrees")
+        print(f"SNR = {snr} dB, Accuracy = {accuracy * 100:.2f}%")
+
+        # You might also want to measure how close the predictions are
+        angle_errors = np.abs(y_pred_classes - y_test_classes)
+        mean_angle_error = np.mean(angle_errors)
+        print(f"Mean absolute angle error = {mean_angle_error:.2f} degrees")
 
     # Plot results
     plt.figure(figsize=(10, 6))
-    plt.plot(snr_values, rmse_results, "o-")
+    plt.plot(snr_values, accuracy_results, "o-")
     plt.grid(True)
     plt.xlabel("SNR (dB)")
-    plt.ylabel("RMSE (degrees)")
-    plt.title("DOA Estimation Performance vs SNR")
+    plt.ylabel("Accuracy (%)")
+    plt.title("DOA Estimation Classification Accuracy vs SNR")
+    plt.ylim(0, 100)  # Set y-axis from 0 to 100%
     plt.show()
 
-    return snr_values, rmse_results
+    return snr_values, accuracy_results
