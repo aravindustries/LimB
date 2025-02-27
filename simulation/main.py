@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import torch
 from sklearn.model_selection import train_test_split
 
-from cnn import build_resnet_model
 from generate_data import generate_data
 from music import music_algorithm
+from cnn import *
 
 sample_rate = 1e6
 N = 1e4
@@ -58,8 +59,11 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
             X[0, Nr:, :] = Q_components
 
             # For classification model
-            y_pred = cnn_model.predict(X, verbose=0)[0]
-            theta_cnn_class = np.argmax(y_pred)
+            # breakpoint()
+            X_tensor = torch.FloatTensor(X)
+
+            y_pred = cnn_model(X_tensor)[0]
+            theta_cnn_class = torch.argmax(y_pred)
             theta_cnn = theta_cnn_class - 90  # Convert back to angle
 
             # MUSIC estimation
@@ -125,20 +129,23 @@ def evaluate_model(model, X_test, y_test):
     # y_test = (y_test + 32).astype(int)
 
     # Predict DOA angle classes
-    y_pred = model.predict(X_test)
-    y_pred_classes = np.argmax(y_pred, axis=1)
+    # breakpoint()
+    X_test_tensor = torch.FloatTensor(X_test)
+
+    y_pred = model(X_test_tensor)
+    y_pred_classes = torch.argmax(y_pred, axis=1)
 
     # Calculate accuracy
     results = y_pred_classes == y_test
     # [print(result) for result in results]
 
-    accuracy = np.mean(results)
+    accuracy = torch.mean(results.float())
 
     print(f"Accuracy = {accuracy * 100:.2f}%")
 
     # You might also want to measure how close the predictions are
-    angle_errors = np.abs(y_pred_classes - y_test)
-    mean_angle_error = np.mean(angle_errors)
+    angle_errors = torch.abs(y_pred_classes - y_test)
+    mean_angle_error = torch.mean(angle_errors)
     print(f"Mean absolute angle error = {mean_angle_error:.2f} degrees")
 
     # print(y_pred_classes - y_test)
@@ -182,24 +189,27 @@ if __name__ == "__main__":
     # 2. Build and train the model
     print("Building and training the model...")
     input_shape = (2 * Nr, N_snapshots)
-    model = build_resnet_model(input_shape)
+    # model = build_resnet_model(input_shape)
 
-    # Print model summary
-    model.summary()
+    # # Print model summary
+    # model.summary()
 
-    # Train the model
-    history = model.fit(
-        X_train,
-        y_train,
-        epochs=10, # 30
-        batch_size=64,
-        validation_data=(X_val, y_val),
-        callbacks=[
-            tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
-            tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3),
-        ],
-        verbose=1,
-    )
+    # # Train the model
+    # history = model.fit(
+    #     X_train,
+    #     y_train,
+    #     epochs=1, # 30
+    #     batch_size=64,
+    #     validation_data=(X_val, y_val),
+    #     callbacks=[
+    #         tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
+    #         tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3),
+    #     ],
+    #     verbose=1,
+    # )
+
+    # model = build_resnet_model_pytorch(input_shape)
+    model = train_model(input_shape, X_train, y_train, X_val, y_val, 64)
 
     # 3. Evaluate model performance at different SNR levels
     print("Evaluating model performance...")
