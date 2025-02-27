@@ -2,15 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from tensorflow.keras import layers, models
-from tensorflow.keras.optimizers import Adam
 
-from cnn import build_resnet_model, evaluate_model
+from cnn import build_resnet_model
 from generate_data import generate_data
 from music import music_algorithm
 
 sample_rate = 1e6
-N = 10000
+N = 1e4
 d = 0.5
 
 
@@ -122,6 +120,42 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
     return results
 
 
+def evaluate_model(model, X_test, y_test):
+    """Evaluate model performance at different SNR levels for classification."""
+    # y_test = (y_test + 32).astype(int)
+
+    # Predict DOA angle classes
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+
+    # Calculate accuracy
+    results = y_pred_classes == y_test
+    # [print(result) for result in results]
+
+    accuracy = np.mean(results)
+
+    print(f"Accuracy = {accuracy * 100:.2f}%")
+
+    # You might also want to measure how close the predictions are
+    angle_errors = np.abs(y_pred_classes - y_test)
+    mean_angle_error = np.mean(angle_errors)
+    print(f"Mean absolute angle error = {mean_angle_error:.2f} degrees")
+
+    # print(y_pred_classes - y_test)
+
+    # Plot results
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(snr_values, accuracy_results, "o-")
+    # plt.grid(True)
+    # plt.xlabel("SNR (dB)")
+    # plt.ylabel("Accuracy (%)")
+    # plt.title("DOA Estimation Classification Accuracy vs SNR")
+    # plt.ylim(0, 100)  # Set y-axis from 0 to 100%
+    # plt.show()
+
+    # return snr_values, accuracy_results
+
+
 # Main execution code
 if __name__ == "__main__":
     # Set random seeds for reproducibility
@@ -157,7 +191,7 @@ if __name__ == "__main__":
     history = model.fit(
         X_train,
         y_train,
-        epochs=30,
+        epochs=10, # 30
         batch_size=64,
         validation_data=(X_val, y_val),
         callbacks=[
@@ -169,10 +203,11 @@ if __name__ == "__main__":
 
     # 3. Evaluate model performance at different SNR levels
     print("Evaluating model performance...")
-    snr_values, rmse_results = evaluate_model(model, snr_range=(-20, 20, 5))
+    # snr_values, rmse_results = 
+    evaluate_model(model, X_val, y_val)
 
     # 4. Compare with MUSIC algorithm
-    print("Comparing with MUSIC algorithm...")
+    # print("Comparing with MUSIC algorithm...")
     compare_results = compare_cnn_music(model, snr_levels=[-10, 0, 10, 20])
 
     print("Done!")
