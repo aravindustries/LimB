@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 import torch
 from sklearn.model_selection import train_test_split
 
@@ -28,8 +28,8 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
 
         for i in range(num_samples):
             # Generate a test sample
-            theta_true = np.random.uniform(-80, 80)  # Avoid edge cases
-            theta_true_class = int(theta_true + 90)  # Convert to class index
+            theta_true = np.random.uniform(-32, 32)  # Avoid edge cases
+            theta_true_class = int(theta_true + 32)  # Convert to class index
 
             # Generate received signal
             theta_rad = theta_true * np.pi / 180
@@ -64,7 +64,7 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
 
             y_pred = cnn_model(X_tensor)[0]
             theta_cnn_class = torch.argmax(y_pred)
-            theta_cnn = theta_cnn_class - 90  # Convert back to angle
+            theta_cnn = theta_cnn_class - 32  # Convert back to angle
 
             # MUSIC estimation
             _, _, theta_music = music_algorithm(r_noisy, num_sources=1)
@@ -167,7 +167,7 @@ def evaluate_model(model, X_test, y_test):
 if __name__ == "__main__":
     # Set random seeds for reproducibility
     np.random.seed(42)
-    tf.random.set_seed(42)
+    # tf.random.set_seed(42)
 
     # Parameters
     Nr = 8  # Number of antennas
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     print("Generating training data...")
     num_train_samples = 5000
     X, y = generate_data(
-        num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-10, 10)
+        num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-20, 10)
     )
 
     # Split data into training and validation sets
@@ -218,6 +218,6 @@ if __name__ == "__main__":
 
     # 4. Compare with MUSIC algorithm
     # print("Comparing with MUSIC algorithm...")
-    compare_results = compare_cnn_music(model, snr_levels=[-10, 0, 10, 20])
+    compare_results = compare_cnn_music(model, snr_levels=[-20, -10, 0, 10])
 
     print("Done!")
