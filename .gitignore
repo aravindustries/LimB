@@ -3,3 +3,5 @@
 .LSOverride
 __pycache__/
 .venv/
+checkpoints/
+*.pth

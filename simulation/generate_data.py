@@ -5,7 +5,9 @@ N = 10000
 d = 0.5
 
 
-def generate_data(num_samples, Nr=8, N_snapshots=512, snr_range=(-20, 10), k_factor_range=(2, 10)):
+def generate_data(
+    num_samples, Nr=8, N_snapshots=512, snr_range=(-20, 10), k_factor_range=(2, 10)
+):
     X = np.zeros((num_samples, 2 * Nr, N_snapshots), dtype=np.float32)
     y = np.zeros(num_samples)
 
@@ -27,22 +29,24 @@ def generate_data(num_samples, Nr=8, N_snapshots=512, snr_range=(-20, 10), k_fac
 
         # Generate K-factor for Rician fading (ratio of LOS to scattered power)
         k_factor = np.random.uniform(k_factor_range[0], k_factor_range[1])
-        
+
         # Calculate power ratio
         los_power = k_factor / (k_factor + 1)
         scatter_power = 1 / (k_factor + 1)
-        
+
         # Generate multipath components (scattered paths)
         # This creates Rayleigh fading for the scattered component
-        h_scatter = np.sqrt(scatter_power/2) * (np.random.randn(Nr, 1) + 1j * np.random.randn(Nr, 1))
+        h_scatter = np.sqrt(scatter_power / 2) * (
+            np.random.randn(Nr, 1) + 1j * np.random.randn(Nr, 1)
+        )
         r_scatter = h_scatter @ tx
-        
+
         # Scale LOS component
         r_los = np.sqrt(los_power) * r_los
-        
+
         # Combine LOS and scattered components to create Rician fading
         r = r_los + r_scatter
-        
+
         # Add AWGN noise based on SNR
         snr_db = np.random.uniform(snr_range[0], snr_range[1])
         snr_linear = 10 ** (snr_db / 10)

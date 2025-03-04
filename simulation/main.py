@@ -4,17 +4,53 @@ import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
 
+from cnn import *
 from generate_data import generate_data
 from music import music_algorithm
-from cnn import *
 
 sample_rate = 1e6
 N = 1e4
 d = 0.5
 
 
-def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
-    """Compare CNN and MUSIC performance using accuracy metrics."""
+def evaluate_model(model, X_test, y_test, device=None):
+    if device is None:
+        device = next(model.parameters()).device
+
+    # Move model to device if not already there
+    model.to(device)
+
+    # Predict DOA angle classes
+    X_test_tensor = torch.FloatTensor(X_test).to(device)
+    y_test_tensor = torch.LongTensor(y_test).to(device)
+
+    model.eval()
+    with torch.no_grad():
+        y_pred = model(X_test_tensor)
+        y_pred_classes = torch.argmax(y_pred, axis=1)
+
+        # Calculate accuracy
+        results = y_pred_classes == y_test_tensor
+        accuracy = torch.mean(results.float())
+
+        # Calculate angle errors
+        angle_errors = torch.abs(y_pred_classes - y_test_tensor)
+        mean_angle_error = torch.mean(angle_errors.float())
+
+    print(f"Accuracy = {accuracy.item() * 100:.2f}%")
+    print(f"Mean absolute angle error = {mean_angle_error.item():.2f} degrees")
+
+    return accuracy.item(), mean_angle_error.item()
+
+
+def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100, device=None):
+    if device is None:
+        device = next(cnn_model.parameters()).device
+
+    # Move model to device
+    cnn_model.to(device)
+    cnn_model.eval()
+
     Nr = 8
     N_snapshots = 512
     results = []
@@ -58,13 +94,13 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
             X[0, :Nr, :] = I_components
             X[0, Nr:, :] = Q_components
 
-            # For classification model
-            # breakpoint()
-            X_tensor = torch.FloatTensor(X)
+            # Move tensor to appropriate device
+            X_tensor = torch.FloatTensor(X).to(device)
 
-            y_pred = cnn_model(X_tensor)[0]
-            theta_cnn_class = torch.argmax(y_pred)
-            theta_cnn = theta_cnn_class - 32  # Convert back to angle
+            with torch.no_grad():
+                y_pred = cnn_model(X_tensor)[0]
+                theta_cnn_class = torch.argmax(y_pred)
+                theta_cnn = theta_cnn_class.cpu().numpy() - 32  # Convert back to angle
 
             # MUSIC estimation
             _, _, theta_music = music_algorithm(r_noisy, num_sources=1)
@@ -124,58 +160,30 @@ def compare_cnn_music(cnn_model, snr_levels=[-10, 0, 10], num_samples=100):
     return results
 
 
-def evaluate_model(model, X_test, y_test):
-    """Evaluate model performance at different SNR levels for classification."""
-    # y_test = (y_test + 32).astype(int)
-
-    # Predict DOA angle classes
-    # breakpoint()
-    X_test_tensor = torch.FloatTensor(X_test)
-
-    y_pred = model(X_test_tensor)
-    y_pred_classes = torch.argmax(y_pred, axis=1)
-
-    # Calculate accuracy
-    results = y_pred_classes == y_test
-    # [print(result) for result in results]
-
-    accuracy = torch.mean(results.float())
-
-    print(f"Accuracy = {accuracy * 100:.2f}%")
-
-    # You might also want to measure how close the predictions are
-    angle_errors = torch.abs(y_pred_classes - y_test)
-    mean_angle_error = torch.mean(angle_errors)
-    print(f"Mean absolute angle error = {mean_angle_error:.2f} degrees")
-
-    # print(y_pred_classes - y_test)
-
-    # Plot results
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(snr_values, accuracy_results, "o-")
-    # plt.grid(True)
-    # plt.xlabel("SNR (dB)")
-    # plt.ylabel("Accuracy (%)")
-    # plt.title("DOA Estimation Classification Accuracy vs SNR")
-    # plt.ylim(0, 100)  # Set y-axis from 0 to 100%
-    # plt.show()
-
-    # return snr_values, accuracy_results
+def get_device():
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"Using CUDA GPU: {torch.cuda.get_device_name(0)}")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using Apple Metal Performance Shaders (MPS)")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+    return device
 
 
-# Main execution code
 if __name__ == "__main__":
-    # Set random seeds for reproducibility
     np.random.seed(42)
-    # tf.random.set_seed(42)
+
+    device = get_device()
 
     # Parameters
     Nr = 8  # Number of antennas
     N_snapshots = 512  # Number of time samples
 
-    # 1. Generate training data for single-source DOA estimation
     print("Generating training data...")
-    num_train_samples = 5000
+    num_train_samples = 10000
     X, y = generate_data(
         num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-20, 10)
     )
@@ -189,35 +197,17 @@ if __name__ == "__main__":
     # 2. Build and train the model
     print("Building and training the model...")
     input_shape = (2 * Nr, N_snapshots)
-    # model = build_resnet_model(input_shape)
 
-    # # Print model summary
-    # model.summary()
+    # Pass the device object, not the function
+    model = train_model(input_shape, X_train, y_train, X_val, y_val, 64, device=device)
 
-    # # Train the model
-    # history = model.fit(
-    #     X_train,
-    #     y_train,
-    #     epochs=1, # 30
-    #     batch_size=64,
-    #     validation_data=(X_val, y_val),
-    #     callbacks=[
-    #         tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
-    #         tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3),
-    #     ],
-    #     verbose=1,
-    # )
-
-    # model = build_resnet_model_pytorch(input_shape)
-    model = train_model(input_shape, X_train, y_train, X_val, y_val, 64)
-
-    # 3. Evaluate model performance at different SNR levels
+    # 3. Evaluate model performance
     print("Evaluating model performance...")
-    # snr_values, rmse_results = 
-    evaluate_model(model, X_val, y_val)
+    evaluate_model(model, X_val, y_val, device=device)
 
     # 4. Compare with MUSIC algorithm
-    # print("Comparing with MUSIC algorithm...")
-    compare_results = compare_cnn_music(model, snr_levels=[-20, -10, 0, 10])
+    compare_results = compare_cnn_music(
+        model, snr_levels=[-20, -10, 0, 10], device=device
+    )
 
     print("Done!")
