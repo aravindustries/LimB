@@ -2,17 +2,22 @@ import numpy as np
 
 sample_rate = 1e6
 N = 10000
-d = 0.5
+d = 0.55
 
 
 def generate_data(
-    num_samples, Nr=8, N_snapshots=512, snr_range=(-20, 10), k_factor_range=(2, 10)
+    num_samples,
+    Nr=16,  # Default for Sivers
+    N_snapshots=512,
+    snr_range=(-20, 10),
+    k_factor_range=(2, 10),
+    theta_range=(-32, 32),
 ):
     X = np.zeros((num_samples, 2 * Nr, N_snapshots), dtype=np.float32)
     y = np.zeros(num_samples)
 
     for i in range(num_samples):
-        theta_degrees = np.random.uniform(-32, 32)
+        theta_degrees = np.random.uniform(*theta_range)
         y[i] = np.round(theta_degrees) + 32
 
         theta = theta_degrees / 180 * np.pi

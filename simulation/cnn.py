@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -127,26 +129,26 @@ def train_model(
     y_train,
     X_val,
     y_val,
-    batch_size=32,
+    batch_size=64,
     epochs=30,
     checkpoint_dir="checkpoints",
     force_retrain=False,
-    min_val_acc=85.0,
-    dynamic_data=True,
     device=torch.device("cpu"),
 ):
-    import os
+    """
+    It would be nice to have a generator as a parameter, as this training
+    setup generates data on the fly.
+    """
 
-    from generate_data import generate_data
-
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    checkpoint_path = os.path.join(checkpoint_dir, "cnn.pth")
-
-    # Initialize best_val_acc variable
+    # Needed for progress tracking
     best_val_acc = 0.0
 
-    # Initialize model
+    # Initialize model  # But what if we passed in an untrained model as a parameter ? Is that a good idea ? It's nice for the sake of everything complicated originating from the main file.
     model = build_resnet_model_pytorch(input_shape)
+
+    # Code for handling checkpoints
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    checkpoint_path = os.path.join(checkpoint_dir, "cnn.pth")
 
     if os.path.exists(checkpoint_path) and not force_retrain:
         print(f"Found existing checkpoint at {checkpoint_path}")
@@ -155,7 +157,6 @@ def train_model(
         model.load_state_dict(checkpoint["model_state_dict"])
 
         # Evaluate the loaded model to see if we should keep it
-        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model.to(device)
         model.eval()
 
@@ -185,28 +186,27 @@ def train_model(
         val_acc = 100.0 * correct / total
         print(f"Loaded model validation accuracy: {val_acc:.2f}%")
 
+        return model  # Just assume the loaded model is good enough
+
         # If validation accuracy is good enough, return the loaded model
-        if val_acc >= min_val_acc:
-            print(
-                f"Loaded model meets accuracy threshold ({val_acc:.2f}% >= {min_val_acc}%), using it."
-            )
-            return model
-        else:
-            print(
-                f"Loaded model below accuracy threshold ({val_acc:.2f}% < {min_val_acc}%), retraining."
-            )
+        # if val_acc >= min_val_acc:
+        #     print(
+        #         f"Loaded model meets accuracy threshold ({val_acc:.2f}% >= {min_val_acc}%), using it."
+        #     )
+        #     return model
+        # else:
+        #     print(
+        #         f"Loaded model below accuracy threshold ({val_acc:.2f}% < {min_val_acc}%), retraining."
+        #     )
+    elif force_retrain:
+        print("Force retrain flag is set, training from scratch.")  # Would be nice if it was actually an input flag.
     else:
-        if force_retrain:
-            print("Force retrain flag is set, training from scratch.")
-        else:
-            print(f"No checkpoint found at {checkpoint_path}, training from scratch.")
+        print(f"No checkpoint found at {checkpoint_path}, training from scratch.")
 
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # Training loop
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     # Calculate the size of the original training set
@@ -219,24 +219,19 @@ def train_model(
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
     for epoch in range(epochs):
-        # Generate new training data for each epoch if dynamic_data is True
-        if dynamic_data and epoch > 0:  # Skip first epoch to have a baseline
-            print(f"Generating new training data for epoch {epoch+1}...")
-            Nr = X_train.shape[1] // 2  # Extract Nr from the data shape
-            N_snapshots = X_train.shape[2]
+        # Generate new training data for each epoch
+        print(f"Generating new training data for epoch {epoch+1}...")
+        Nr = X_train.shape[1] // 2  # Extract Nr from the data shape
+        N_snapshots = X_train.shape[2]
 
-            # Generate new training data with the same shape as the original
-            X_train_new, y_train_new = generate_data(
-                num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-20, 10)
-            )
+        # Generate new training data with the same shape as the original
+        X_train_new, y_train_new = generate_data(
+            num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-20, 10)
+        )
 
-            # Convert new data to tensors
-            X_train_tensor = torch.FloatTensor(X_train_new)
-            y_train_tensor = torch.LongTensor(y_train_new)
-        else:
-            # Use original data for the first epoch
-            X_train_tensor = torch.FloatTensor(X_train)
-            y_train_tensor = torch.LongTensor(y_train)
+        # Convert new data to tensors
+        X_train_tensor = torch.FloatTensor(X_train_new)
+        y_train_tensor = torch.LongTensor(y_train_new)
 
         # Create training dataset and loader
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
@@ -309,13 +304,6 @@ def train_model(
                 },
                 checkpoint_path,
             )
-
-        # Early stopping check
-        if epoch >= 14 and not dynamic_data:
-            print(
-                "Reached epoch 14, stopping to prevent overfitting (set dynamic_data=True to continue with fresh data)"
-            )
-            break
 
     # Load the best model (if we improved over initial)
     if best_val_acc > 0:
