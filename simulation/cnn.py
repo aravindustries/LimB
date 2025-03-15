@@ -199,7 +199,9 @@ def train_model(
         #         f"Loaded model below accuracy threshold ({val_acc:.2f}% < {min_val_acc}%), retraining."
         #     )
     elif force_retrain:
-        print("Force retrain flag is set, training from scratch.")  # Would be nice if it was actually an input flag.
+        print(
+            "Force retrain flag is set, training from scratch."
+        )  # Would be nice if it was actually an input flag.
     else:
         print(f"No checkpoint found at {checkpoint_path}, training from scratch.")
 
