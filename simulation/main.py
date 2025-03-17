@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
+from tqdm import trange
 
 from cnn import *
 from generate_data import generate_data
@@ -40,7 +41,6 @@ def evaluate_model(model, X_test, y_test, device=None, verbose=True):
 
 
 def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
-
     snr = 10
     Nr = 16
     N_snapshots = 512 
@@ -52,7 +52,7 @@ def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
     music_mae = np.zeros(65)
 
     # This i going one by one through each sample
-    for theta in range(-32, 33):  # also undefined
+    for theta in trange(-32, 33):  # also undefined
         X, y = generate_data(
             2000,
             Nr=Nr,
@@ -68,7 +68,7 @@ def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
 
         music_model = models[1] # Second model is MUSIC
         accuracy, mae = music_model.evaluate(X, y, Nr)
-        music_accuracy[theta + 32] = accuracy
+        music_accuracy[theta + 32] = accuracy * 100
         music_mae[theta + 32] = mae
 
     plt.figure(figsize=(12, 10))
