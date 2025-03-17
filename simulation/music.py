@@ -5,7 +5,7 @@ class Music:
     def __init__(self, d):
         self.d = d
 
-    def evaluate(self, X, y, Nr):
+    def evaluate(self, X, y, Nr=16):
         I_components = X[:, :Nr]
         Q_components = X[:, Nr:]
         r = I_components + 1j * Q_components

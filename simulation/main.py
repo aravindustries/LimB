@@ -1,3 +1,5 @@
+from types import MethodType
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -9,7 +11,7 @@ from generate_data import generate_data
 from music import Music
 
 
-def evaluate_model(model, X_test, y_test, device=None, verbose=True):
+def evaluate_model(model, X_test, y_test, device=None, verbose=False):
     if device is None:
         device = next(model.parameters()).device
 
@@ -40,16 +42,12 @@ def evaluate_model(model, X_test, y_test, device=None, verbose=True):
     return accuracy.item(), mean_angle_error.item()
 
 
-def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
+def make_the_nice_plots(models, names, device, snr_levels=[-10, 0, 10]):
     snr = 10
     Nr = 16
     N_snapshots = 512 
 
-    # These are the range of angles we are getting the accuracies for
-    cnn_accuracy = np.zeros(65)  # No dictionaries
-    cnn_mae = np.zeros(65)
-    music_accuracy = np.zeros(65)
-    music_mae = np.zeros(65)
+    accuracies, maes = [np.zeros(65) for _ in models], [np.zeros(65) for _ in models]
 
     # This i going one by one through each sample
     for theta in trange(-32, 33):  # also undefined
@@ -61,21 +59,16 @@ def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
             theta_range=(theta, theta),
         )
 
-        cnn_model = models[0]  # First model is CNN
-        accuracy, mae = evaluate_model(cnn_model, X, y, device=device, verbose=False)
-        cnn_accuracy[theta + 32] = accuracy * 100
-        cnn_mae[theta + 32] = mae
-
-        music_model = models[1] # Second model is MUSIC
-        accuracy, mae = music_model.evaluate(X, y, Nr)
-        music_accuracy[theta + 32] = accuracy * 100
-        music_mae[theta + 32] = mae
+        for i, model in enumerate(models):
+            accuracy, mae = model.evaluate(X, y)
+            accuracies[i][theta+32] = accuracy * 100
+            maes[i][theta+32] = mae
 
     plt.figure(figsize=(12, 10))
 
     plt.subplot(2, 1, 1)
-    plt.plot(np.arange(-32, 33), cnn_accuracy, "o-", label="CNN", color="blue")
-    plt.plot(np.arange(-32, 33), music_accuracy, "s--", label="MUSIC", color="red")
+    for i, name in enumerate(names):
+        plt.plot(np.arange(-32, 33), accuracies[i], label=name)
     plt.grid(True)
     plt.xlabel("True Angle (degrees)")
     plt.ylabel("Accuracy (%)")
@@ -84,8 +77,8 @@ def make_the_nice_plots(models, device, snr_levels=[-10, 0, 10]):
     plt.ylim(0, 100)
 
     plt.subplot(2, 1, 2)
-    plt.plot(np.arange(-32, 33), cnn_mae, "o-", label="CNN", color="blue")
-    plt.plot(np.arange(-32, 33), music_mae, "s--", label="MUSIC", color="red")
+    for i, name in enumerate(names):
+        plt.plot(np.arange(-32, 33), maes[i], label=name)
     plt.grid(True)
     plt.xlabel("True Angle (degrees)")
     plt.ylabel("Mean Absolute Error (degrees)")
@@ -139,11 +132,13 @@ if __name__ == "__main__":
 
     # Pass the device object, not the function
     model = train_model(input_shape, X_train, y_train, X_val, y_val, device=device)
+    model.evaluate = MethodType(evaluate_model, model)
 
     # 3. Evaluate model performance
     print("Evaluating model performance...")
     # evaluate_model(model, X_val, y_val, device=device)
-    make_the_nice_plots([model, music], device)
+    # make_the_nice_plots([model, music], device)
+    make_the_nice_plots([model, music], ["CNN", "MUSIC"], device)
 
     # 4. Compare with MUSIC algorithm
     # compare_results = compare_cnn_music(
