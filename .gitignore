@@ -23,3 +23,5 @@ checkpoints/
 *.fls
 *.fdb_latexmk
 images/
+
+*.ignore.py

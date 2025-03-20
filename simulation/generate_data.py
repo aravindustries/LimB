@@ -32,28 +32,29 @@ def generate_data(
         # LOS signal component
         r_los = s @ tx
 
-        # Generate K-factor for Rician fading (ratio of LOS to scattered power)
-        k_factor = np.random.uniform(k_factor_range[0], k_factor_range[1])
+        # # Generate K-factor for Rician fading (ratio of LOS to scattered power)
+        # k_factor = np.random.uniform(*k_factor_range)
 
-        # Calculate power ratio
-        los_power = k_factor / (k_factor + 1)
-        scatter_power = 1 / (k_factor + 1)
+        # # Calculate power ratio
+        # los_power = k_factor / (k_factor + 1)
+        # scatter_power = 1 / (k_factor + 1)
 
-        # Generate multipath components (scattered paths)
-        # This creates Rayleigh fading for the scattered component
-        h_scatter = np.sqrt(scatter_power / 2) * (
-            np.random.randn(Nr, 1) + 1j * np.random.randn(Nr, 1)
-        )
-        r_scatter = h_scatter @ tx
+        # # Generate multipath components (scattered paths)
+        # # This creates Rayleigh fading for the scattered component
+        # h_scatter = np.sqrt(scatter_power / 2) * (
+        #     np.random.randn(Nr, 1) + 1j * np.random.randn(Nr, 1)
+        # )
+        # r_scatter = h_scatter @ tx
 
-        # Scale LOS component
-        r_los = np.sqrt(los_power) * r_los
+        # # Scale LOS component
+        # r_los = np.sqrt(los_power) * r_los
 
-        # Combine LOS and scattered components to create Rician fading
-        r = r_los + r_scatter
+        # # Combine LOS and scattered components to create Rician fading
+        # r = r_los + r_scatter
+        r = r_los  # TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP
 
         # Add AWGN noise based on SNR
-        snr_db = np.random.uniform(snr_range[0], snr_range[1])
+        snr_db = np.random.uniform(*snr_range)
         snr_linear = 10 ** (snr_db / 10)
 
         signal_power = np.mean(np.abs(r) ** 2)
