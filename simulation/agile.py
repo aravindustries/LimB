@@ -4,29 +4,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-Nr = 16
-
 class Agile:
-    def __init__(self, B, spread):
+    def __init__(self, B, spread, Nr=16):
         self.d = 0.55
+        self.Nr = Nr
 
         betas = np.linspace(-spread, spread, B)
-        self.beta_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(betas).reshape(-1, 1))
+        self.beta_matrix = np.exp(-2j * np.pi * d * np.arange(self.Nr) * np.sin(betas).reshape(-1, 1))
 
 
     # X, y = generate_data(100, snr_range=(10, 20), k_factor_range=(0,0))
     # breakpoint()
     def call(self, X):
-        X = X[:, :Nr] + 1j * X[:, Nr:]
+        X = X[:, :self.Nr] + 1j * X[:, self.Nr:]
         beams =  self.beta_matrix.conj() @ X
 
         k = 32
 
         # Get theoretical gains
         alphas = np.array(range(-k, k+1)) * np.pi / 180
-        alpha_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(alphas.reshape(-1, 1)))
+        alpha_matrix = np.exp(-2j * np.pi * d * np.arange(self.Nr) * np.sin(alphas.reshape(-1, 1)))
 
-        gain = alpha_matrix @ self.beta_matrix.conj().T / Nr
+        gain = alpha_matrix @ self.beta_matrix.conj().T / self.Nr
         gain = np.abs(np.square(gain))  # the amount by which _power_ is amplified, not voltage
         # breakpoint()
         gain /= np.linalg.norm(gain, axis=1).reshape(-1, 1)  # Normalize

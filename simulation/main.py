@@ -12,7 +12,7 @@ from generate_data import generate_data
 from music import Music
 
 
-def evaluate_model(model, X_test, y_test, device=None, verbose=False):
+def evaluate_model(model, X_test, y_test, Nr=16, device=None, verbose=False):
     if device is None:
         device = next(model.parameters()).device
 
@@ -43,9 +43,8 @@ def evaluate_model(model, X_test, y_test, device=None, verbose=False):
     return accuracy.item(), mean_angle_error.item()
 
 
-def make_the_nice_plots(models, names, device=None, snr_levels=[-10, 0, 10]):
-    snr = 100
-    Nr = 16
+def make_the_nice_plots(models, names, Nr=16, device=None, snr_levels=[-10, 0, 10]):
+    snr = 5
     N_snapshots = 512 
 
     accuracies, maes = [np.zeros(65) for _ in models], [np.zeros(65) for _ in models]
@@ -89,6 +88,9 @@ def make_the_nice_plots(models, names, device=None, snr_levels=[-10, 0, 10]):
     plt.tight_layout()
     plt.savefig("./plot.png")
 
+    for i, name in enumerate(names):
+        print(f"{name} - Accuracy: {accuracies[i].mean():.2f}%, MAE: {maes[i].mean():.2f} degrees")
+
 
 def get_device():
     if torch.cuda.is_available():
@@ -113,9 +115,9 @@ if __name__ == "__main__":
     d = 0.55  # I think
     N_snapshots = 512  # Number of time samples
 
-    music = Music(d)
-    agile8 = Agile(3, 60)
-    agile16 = Agile(16, 60)
+    # music = Music(d)
+    agile8 = Agile(8, 60, Nr=Nr)
+    agile16 = Agile(16, 60, Nr=Nr)
 
     # print("Generating training data...")
     # num_train_samples = 10000
@@ -145,6 +147,7 @@ if __name__ == "__main__":
     make_the_nice_plots(
         [agile8, agile16],
         ["Agile (B=8)", "Agile (B=16)"],
+        Nr=Nr,
     )
 
     # 4. Compare with MUSIC algorithm
