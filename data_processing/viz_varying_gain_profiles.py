@@ -31,7 +31,7 @@ for power in power_levels:
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(111, projection='3d')
     
-    ax.plot_surface(X, Y, gains_norm, cmap='viridis', edgecolor='none')
+    ax.plot_surface(X, Y, gains_norm, cmap='jet', edgecolor='none')
     
     ax.set_xlabel("Beam Index")
     ax.set_ylabel("Angle")
