@@ -114,7 +114,7 @@ for file in csv_files:
     beam_gains_normalized = (beam_gains - np.min(beam_gains)) / (np.max(beam_gains) - np.min(beam_gains))
     
     beam_numbers = np.arange(len(beam_gains_normalized))
-    plt.plot(beam_numbers, beam_gains_normalized, label=f'Power {power_level}')
+    plt.plot(beam_numbers, beam_gains_normalized, label=f'SNR {20*np.log(int(power_level)/300)}')
 
 plt.xlabel('Beam Index')
 plt.ylabel('Normalized Gain')

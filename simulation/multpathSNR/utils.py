@@ -8,7 +8,7 @@ device = torch.device('cuda')
 '''Simulation Parameters for 28 GHZ IBM Phased Array Antenna Module'''
 '''DO NOT CHANGE'''
 
-d = 0.45  # distance normalized to wavelength
+d = 0.55  # distance normalized to wavelength
 array_size = 4  
 Nr = array_size**2  
 sample_rate = 1e6  # sampling rate
