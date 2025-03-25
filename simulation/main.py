@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import trange
 
 from agile import Agile
-from cnn import *
+from archive.cnn import *
 from generate_data import generate_data
 from music import Music
 

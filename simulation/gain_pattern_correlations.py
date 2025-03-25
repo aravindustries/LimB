@@ -12,7 +12,7 @@ k = 8
 def get_corr(betas):
     alphas = np.array(range(-lim, lim+1)) * np.pi / 180
     alpha_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(alphas).reshape(-1, 1))
-    beta_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(betas).reshape(-1, 1))
+    beta_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(betas * np.pi / 180).reshape(-1, 1))
     gain = alpha_matrix @ beta_matrix.conj().T / Nr
     gain = np.real(gain)
     return gain @ gain.T

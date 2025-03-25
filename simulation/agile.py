@@ -10,7 +10,7 @@ class Agile:
         self.Nr = Nr
 
         betas = np.linspace(-spread, spread, B)
-        self.beta_matrix = np.exp(-2j * np.pi * d * np.arange(self.Nr) * np.sin(betas).reshape(-1, 1))
+        self.beta_matrix = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(betas * np.pi / 180).reshape(-1, 1))
 
 
     # X, y = generate_data(100, snr_range=(10, 20), k_factor_range=(0,0))

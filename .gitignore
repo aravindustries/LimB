@@ -25,3 +25,4 @@ checkpoints/
 images/
 
 *.ignore
+*.ignore.py

@@ -4,6 +4,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+\usepackage{orcidlink}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -20,7 +21,7 @@
     \textit{
         The Cooper Union for the Advancement of Science and Art}\\
         New York City, USA \\
-        arav.sharma@cooper.edu
+        arav.sharma@cooper.edu \orcidlink{0009-0004-7928-7047}
     }
     \and
     \IEEEauthorblockN{Lei Chi}
@@ -28,7 +29,7 @@
     \textit{
         The Cooper Union for the Advancement of Science and Art}\\
         New York City, USA \\
-        lei.chi@cooper.edu
+        lei.chi@cooper.edu \orcidlink{0009-0002-1462-4319}
     }
     \and
     \IEEEauthorblockN{Ari Gebhardt}
@@ -36,7 +37,7 @@
     \textit{
         The Cooper Union for the Advancement of Science and Art}\\
         New York City, USA \\
-        ari.gebhardt@cooper.edu
+        ari.gebhardt@cooper.edu \orcidlink{0009-0006-4991-5617}
     }
     \and
     \IEEEauthorblockN{Sam Keene}
@@ -52,9 +53,10 @@
 
 \begin{abstract}
     Detection-of-arrival ( DoA ) is a core task in phased-array signal processing research. Plenty of traditional methods exist for the task, such as delay and
-     sum, MUSIC, and ESPRIT, but recent deep learning methods have been proposed which could ameliorate issues with low SNR, high multipath fading, high 
-     quantization error, and even execution time. In this paper, we compare a number of deep learning DoA systems both in simulation and on hardware. We 
-     additionally propose our own deep learning DoA systems, DeepDoA, based on our analysis of the strengths and weaknesses of previous work.
+    sum, MUSIC, and ESPRIT, but recent deep learning methods have been proposed which could ameliorate issues with low SNR, high multipath fading, high 
+    quantization error, and even execution time. In this paper, we compare a number of deep learning DoA systems both in simulation and on hardware. We 
+    propose our own deep learning DoA systems, DeepDoA, based on our analysis of the strengths and weaknesses of previous work. Additionally, we are
+    open-sourcing our test-set, IQBase, for use by future deep learning-based DoA systems.
 \end{abstract}
 
 \begin{IEEEkeywords}
