@@ -5,6 +5,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm 
+import pandas as pd
 
 class MLP(nn.Module):
     def __init__(self, input_dim):
@@ -87,3 +88,8 @@ class doaMLP():
         plt.legend()
         plt.grid(True)
         plt.savefig('MLP performance16')
+
+
+class data_processor():
+    def __init__(self, csv_file):
+        pa
