@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import trange
 
 from agile import Agile
-from archive.cnn import *
+# from archive.cnn import *
 from generate_data import generate_data
 from music import Music
 
@@ -108,51 +108,17 @@ def get_device():
 if __name__ == "__main__":
     np.random.seed(42)
 
-    device = get_device()
+    Nr = 16
+    d = 0.55
+    N_snapshots = 512
 
-    # Parameters
-    Nr = 16  # Actual number from Sivers
-    d = 0.55  # I think
-    N_snapshots = 512  # Number of time samples
-
-    # music = Music(d)
     agile8 = Agile(8, 60, Nr=Nr)
     agile16 = Agile(16, 60, Nr=Nr)
 
-    # print("Generating training data...")
-    # num_train_samples = 10000
-    # X, y = generate_data(
-    #     num_train_samples, Nr=Nr, N_snapshots=N_snapshots, snr_range=(-20, 10)
-    # )
-
-    # # Split data into training and validation sets  # But we're not really using it ?
-    # X_train, X_val, y_train, y_val = train_test_split(
-    #     X, y, test_size=0.2, random_state=42
-    # )
-    # print(f"Training data shape: {X_train.shape}, Validation data shape: {X_val.shape}")
-
-    # # 2. Build and train the model
-    # print("Building and training the model...")
-    # input_shape = (2 * Nr, N_snapshots)
-
-    # Pass the device object, not the function
-    # model = train_model(input_shape, X_train, y_train, X_val, y_val, device=device)
-    # model.evaluate = MethodType(evaluate_model, model)
-
-    # 3. Evaluate model performance
-    print("Evaluating model performance...")
-    # evaluate_model(model, X_val, y_val, device=device)
-    # make_the_nice_plots([model, music], device)
-    # make_the_nice_plots([model, music], ["CNN", "MUSIC"], device)
     make_the_nice_plots(
         [agile8, agile16],
         ["Agile (B=8)", "Agile (B=16)"],
         Nr=Nr,
     )
-
-    # 4. Compare with MUSIC algorithm
-    # compare_results = compare_cnn_music(
-    #     model, snr_levels=[-20, -10, 0, 10], device=device
-    # )
 
     print("Done!")
