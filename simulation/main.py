@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
-from tqdm import trange
+from tqdm import tqdm, trange
 
 from agile import Agile
 # from archive.cnn import *
@@ -43,8 +43,7 @@ def evaluate_model(model, X_test, y_test, Nr=16, device=None, verbose=False):
     return accuracy.item(), mean_angle_error.item()
 
 
-def make_the_nice_plots(models, names, Nr=16, device=None, snr_levels=[-10, 0, 10]):
-    snr = 5
+def same_data_different_models(models, names, Nr=16, snr=5):
     N_snapshots = 512 
 
     accuracies, maes = [np.zeros(65) for _ in models], [np.zeros(65) for _ in models]
@@ -64,25 +63,25 @@ def make_the_nice_plots(models, names, Nr=16, device=None, snr_levels=[-10, 0, 1
             accuracies[i][theta+32] = accuracy * 100
             maes[i][theta+32] = mae
 
-    plt.figure(figsize=(12, 10))
+    # plt.figure(figsize=(12, 10))
 
-    plt.subplot(2, 1, 1)
-    for i, name in enumerate(names):
-        plt.plot(np.arange(-32, 33), accuracies[i], label=name)
-    plt.grid(True)
-    plt.xlabel("True Angle (degrees)")
-    plt.ylabel("Accuracy (%)")
-    plt.title(f"DOA Estimation Accuracy: CNN vs MUSIC (SNR = {snr} dB)")
-    plt.legend()
-    plt.ylim(0, 105)
+    # plt.subplot(2, 1, 1)
+    # for i, name in enumerate(names):
+    #     plt.plot(np.arange(-32, 33), accuracies[i], label=name)
+    # plt.grid(True)
+    # plt.xlabel("True AoA α (°)")
+    # plt.ylabel("Accuracy (%)")
+    # plt.title(f"DOA Estimation Accuracy: CNN vs MUSIC (SNR = {snr} dB)")
+    # plt.legend()
+    # plt.ylim(0, 105)
 
-    plt.subplot(2, 1, 2)
+    # plt.subplot(2, 1, 2)
     for i, name in enumerate(names):
         plt.plot(np.arange(-32, 33), maes[i], label=name)
     plt.grid(True)
-    plt.xlabel("True Angle (degrees)")
-    plt.ylabel("Mean Absolute Error (degrees)")
-    plt.title(f"DOA Estimation Error: CNN vs MUSIC (SNR = {snr} dB)")
+    plt.xlabel("True AoA α (°)")
+    plt.ylabel("Mean angle error (°)")
+    plt.title(f"DOA Estimation Error (SNR = {snr} dB)")
     plt.legend()
 
     plt.tight_layout()
@@ -90,6 +89,38 @@ def make_the_nice_plots(models, names, Nr=16, device=None, snr_levels=[-10, 0, 1
 
     for i, name in enumerate(names):
         print(f"{name} - Accuracy: {accuracies[i].mean():.2f}%, MAE: {maes[i].mean():.2f} degrees")
+
+
+def different_data_same_model(model, name, snr_levels=[0, 5, 10, 15, 20], Nr=16):
+    accuracies, maes = [np.zeros(65) for _ in snr_levels], [np.zeros(65) for _ in snr_levels]
+
+    for i, snr in enumerate(tqdm(snr_levels)):
+        for theta in range(-32, 33):
+            X, y = generate_data(
+                200,
+                Nr=Nr,
+                N_snapshots=512,
+                snr_range=(snr, snr),
+                theta_range=(theta, theta),
+            )
+
+            accuracy, mae = model.evaluate(X, y)
+            accuracies[i][theta + 32] = accuracy * 100
+            maes[i][theta + 32] = mae
+    
+    for i, snr in enumerate(snr_levels):
+        plt.plot(np.arange(-32, 33), maes[i], label=f"SNR = {snr} dB")
+    plt.grid(True)
+    plt.xlabel("True AoA α (°)")
+    plt.ylabel("Mean angle error (°)")
+    plt.title(f"DOA Estimation Error: {name}")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig("./plot2.png")
+
+    for i, snr in enumerate(snr_levels):
+        print(f"SNR = {snr} dB - Accuracy: {accuracies[i].mean():.2f}%, MAE: {maes[i].mean():.2f} degrees")
 
 
 def get_device():
@@ -112,12 +143,22 @@ if __name__ == "__main__":
     d = 0.55
     N_snapshots = 512
 
-    agile8 = Agile(8, 60, Nr=Nr)
-    agile16 = Agile(16, 60, Nr=Nr)
+    agile3 = Agile(3, 30, Nr=Nr)
+    agile4 = Agile(4, 30, Nr=Nr)
+    agile6 = Agile(6, 30, Nr=Nr)
+    agile8 = Agile(8, 30, Nr=Nr)
+    agile12 = Agile(12, 30, Nr=Nr)
+    agile16 = Agile(16, 30, Nr=Nr)
 
-    make_the_nice_plots(
-        [agile8, agile16],
-        ["Agile (B=8)", "Agile (B=16)"],
+    # same_data_different_models(
+    #     [agile3, agile4, agile6, agile8, agile12, agile16],
+    #     ["Agile (B=3)", "Agile (B=4)", "Agile (B=6)", "Agile (B=8)", "Agile (B=12)", "Agile (B=16)"],
+    #     Nr=Nr,
+    # )
+
+    different_data_same_model(
+        agile8,
+        "Agile (B=8)",
         Nr=Nr,
     )
 
