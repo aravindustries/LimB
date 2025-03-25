@@ -43,7 +43,7 @@ class AgileCNN(nn.Module):
         return x
 
 
-def apply_agile_beam_switching(X, y, num_beams, spread=60, Nr=16, d=0.55):
+def apply_agile_beam_switching(X, y, num_beams, spread=32, Nr=4, d=0.55):
     
     #steering vectors
     betas = np.linspace(-spread, spread, num_beams)
@@ -243,14 +243,15 @@ if __name__ == "__main__":
     # using old generate data
     X, y = generate_data(
         num_samples=10000,
-        Nr=16,
-        N_snapshots=512
+        Nr=4,
+        N_snapshots=512,
+        snr_range=(5, 5)
     )
 
     print(X.shape)
     print(y.shape)
 
-    num_beams = 8
+    num_beams = 4
     batch_size = 64
     epochs = 40
     learning_rate = 0.001
@@ -291,5 +292,5 @@ if __name__ == "__main__":
 
 
     accuracy, mae, _, _, _ = evaluate_and_plot(model, X_test, y_test, num_beams, device)
-    print(f"Final results: Accuracy: {accuracy*100:.2f}%, MAE: {mae:.2f} degrees")
+    print(f"Final results: Accuracy: {accuracy:.2f}%, MAE: {mae:.2f} degrees")
    
