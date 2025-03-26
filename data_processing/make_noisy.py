@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Load the CSV file into a DataFrame
-# Replace 'your_file.csv' with the path to your CSV file
 df = pd.read_csv('power_800_data.csv')
 
 # Extract the angle and power level columns

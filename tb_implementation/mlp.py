@@ -90,6 +90,5 @@ class doaMLP():
         plt.savefig('MLP performance16')
 
 
-class data_processor():
-    def __init__(self, csv_file):
-        pa
+# class data_processor():
+#    def __init__(self, csv_file):

@@ -34,6 +34,8 @@ viz_gain_prof("../data/gain_profiles/gain_profiles_march22a.csv")
 viz_gain_prof("../data/gain_profiles/gain_profiles_march22b.csv")
 
 viz_gain_prof("../data/gain_profiles/gain_profiles_march23.csv")
+
+
 # %%
 import pandas as pd
 import numpy as np
@@ -64,3 +66,4 @@ def viz_gain_prof(csv_file):
     plt.show()
     
 viz_gain_prof("../data_processing/multipath_mixed.csv")
+# %%
