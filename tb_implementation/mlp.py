@@ -5,7 +5,12 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm 
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+import utils2
+
+def get_beams(n, spread=49):
+    return np.linspace(32-(spread/2), 32+(spread/2), n, dtype=int)
 
 class MLP(nn.Module):
     def __init__(self, input_dim):
@@ -30,36 +35,28 @@ class doaMLP():
         self.model = MLP(input_shape) 
         self.criterion = nn.MSELoss()
 
-    def train_model(
-        self,
-        X_train,
-        y_train,
-        epochs=30,
-    ):  
+    def train_model(self, X_train, y_train, epochs=30):
         X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
         y_train_tensor = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)  # Ensure correct shape
 
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)  # Randomized order
-        
+
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
         for epoch in range(epochs):
             self.model.train()
             running_loss = 0.0
 
-            with tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False) as pbar:
-                for inputs, targets in pbar:
-                    optimizer.zero_grad()  
-                    outputs = self.model(inputs)  
-                    loss = self.criterion(outputs, targets) 
-                    loss.backward()  
-                    optimizer.step() 
-                    running_loss += loss.item()
-                    pbar.set_postfix(loss=loss.item())  
+            for inputs, targets in train_loader:
+                optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
 
-            if (epoch+1) % 10 == 0:
-                print(f"Epoch [{epoch+1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}")
+        return running_loss
 
     def eval_model(self, X_test, y_test):
         X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
@@ -87,8 +84,16 @@ class doaMLP():
         plt.title("True vs. Predicted Angles")
         plt.legend()
         plt.grid(True)
-        plt.savefig('MLP performance16')
-
-
+        plt.savefig('MLP performance'+str(self.in_shape))
+                    
+    def iterative_train(self, df_train, scaler, N):    
+        beta = get_beams(self.in_shape, 50)
+        scaler = MinMaxScaler()
+        
+        for k in tqdm(range(N), desc="Training Progress"):
+            ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(-5, 20))
+            y_train = ndf['Angle'].to_numpy()
+            X_train = scaler.fit_transform(ndf.iloc[:, 2:65].iloc[:, beta])
+            loss = self.train_model(X_train, y_train, epochs=300)
 # class data_processor():
 #    def __init__(self, csv_file):
