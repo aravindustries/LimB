@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 sample_rate = 1e6
 N = 10000
@@ -8,7 +9,7 @@ d = 0.55
 
 def generate_data(
     num_samples,
-    Nr=16,  # Default for Sivers
+    Nr=4,  # Default for Sivers
     N_snapshots=512,
     snr_range=(-20, 10),
     theta_range=(-32, 32),

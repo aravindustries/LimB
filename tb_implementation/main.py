@@ -28,7 +28,7 @@ gain_profiles = df.iloc[:, 2:65]
 print(gain_profiles)
 
 scaler = MinMaxScaler()
-gain_profs = scaler.fit_transform(gain_profiles.iloc[:, get_beams(4)])
+gain_profs = scaler.fit_transform(gain_profiles.iloc[:, get_beams(3)])
 
 print(gain_profs.shape)
 
@@ -37,7 +37,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 dmlp = doaMLP(X_train.shape[1])
-
+print(X_train.shape[1])
 dmlp.train_model(X_train, y_train, epochs=600)
 
 dmlp.eval_model(X_test, y_test)

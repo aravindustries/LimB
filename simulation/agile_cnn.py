@@ -245,7 +245,8 @@ if __name__ == "__main__":
         num_samples=10000,
         Nr=4,
         N_snapshots=512,
-        snr_range=(5, 5)
+        snr_range=(-10, 20),
+        num_of_thetas_range=(2,3)
     )
 
     print(X.shape)

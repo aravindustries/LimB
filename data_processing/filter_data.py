@@ -14,7 +14,7 @@ gains = df.iloc[:, 2:65].to_numpy()
 
 df_filtered = df[df[1] != 10]
 df_filtered = df_filtered[df_filtered[1] != 56]
-df_filtered.to_csv("filtered_data2.csv", index=False, header=False)
+df_filtered.to_csv("filtered_data3.csv", index=False, header=False)
 
 power_levels = np.unique(df_filtered[1].to_numpy())
 

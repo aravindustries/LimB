@@ -56,6 +56,7 @@ def same_data_different_models(models, names, Nr=16, snr=5):
             N_snapshots=N_snapshots,
             snr_range=(snr, snr),
             theta_range=(theta, theta),
+            num_of_thetas=(1,2)
         )
 
         for i, model in enumerate(models):
@@ -102,6 +103,7 @@ def different_data_same_model(model, name, snr_levels=[0, 5, 10, 15, 20], Nr=16)
                 N_snapshots=512,
                 snr_range=(snr, snr),
                 theta_range=(theta, theta),
+                num_of_thetas=(2, 3)
             )
 
             accuracy, mae = model.evaluate(X, y)
