@@ -31,3 +31,5 @@ agile = Agile(angles[indexes])
 X = df[[f"Beam_{i}" for i in indexes]].values
 print(X.shape)
 y_hat = agile.call(X)
+
+# %%
