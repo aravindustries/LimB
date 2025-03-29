@@ -72,8 +72,8 @@ def add_multipath_rician(df, K):
         peak_beam = np.random.randint(0, 63)
         peak_gain = np.random.uniform(0, 1)
 
-        angle_spread = np.random.uniform(2, 3)
-        beam_spread = np.random.uniform(2, 3)
+        angle_spread = np.random.uniform(1, 3)
+        beam_spread = np.random.uniform(1, 3)
 
         for i, angle in enumerate(angles):
             for j, beam in enumerate(beams):
@@ -120,7 +120,7 @@ def viz_df(df, figname):
     ax.set_ylabel("Angle")
     ax.set_zlabel("Gain")
     ax.set_title(figname)
-    plt.savefig(figname)
+    #plt.savefig(figname)
 
 
 def get_snr(original_df, noisy_df):
@@ -173,14 +173,14 @@ def run_test():
     df = pd.read_csv('../data_processing/train_gain_prof.csv')
     viz_df(df, 'original_gain_profile.png')
 
-    target_snr = 15  # Target SNR in dB
+    target_snr = 18  # Target SNR in dB
     noisy_df, final_snr = adjust_noise_to_target_snr(df, target_snr)
 
     print(f"Final achieved SNR: {final_snr:.2f} dB")
 
     viz_df(noisy_df, 'noisy_df')
 
-    noisy_df.to_csv('../data/spacial_profiles/gp_' + str(target_snr) + '.csv', index=False)
+    noisy_df.to_csv('../data/spacial_profiles/mid_high_snr/gp_' + f"{final_snr:.2f}" + '.csv', index=False)
 
     #mpdf = add_multipath_rician(df, 10)
     #viz_df(mpdf, 'multipath_gain_profile.png')
@@ -193,6 +193,5 @@ def run_test():
     #print(snr)
 
 #run_test()
-
 
 # %%

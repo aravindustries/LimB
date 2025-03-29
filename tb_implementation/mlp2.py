@@ -11,7 +11,7 @@ import utils2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def get_beams(n, spread=49):
+def get_beams(n, spread=60):
     return np.linspace(32 - (spread / 2), 32 + (spread / 2), n, dtype=int)
 
 class MLPClassifier(nn.Module):
@@ -70,30 +70,16 @@ class doaMLPClassifier():
         with torch.no_grad():
             logits = self.model(X_test_tensor)
             predictions = torch.argmax(logits, dim=1)
-            accuracy = (predictions == y_test_tensor).float().mean().item()
-            #print(predictions)
-        #print(predictions)
-        print(f"Test Accuracy: {accuracy * 100:.2f}%")
-        return y_test_tensor.cpu().numpy(), predictions.cpu().numpy()
-    
-    def plot_predictions(self, y_actual, y_pred):
-        plt.figure(figsize=(10, 5))
-        plt.scatter([-45, 45], y_pred, alpha=0.5, label='Predicted vs Actual')
-        plt.plot([-45, 45], y_actual, 'r--', label='Ideal Prediction')
-        plt.xlabel("Actual Angle")
-        plt.ylabel("Predicted Angle")
-        plt.title("Actual vs Predicted Angle")
-        plt.legend()
-        plt.show()
-        plt.savefig('performance_plot' + str(self.in_shape) + '.png')
-
-    def iterative_train(self, df_train, scaler, N):
-        beta = get_beams(self.in_shape, 50)
-        scaler = MinMaxScaler()
-        label_encoder = LabelEncoder()
         
+        return y_test_tensor.cpu().numpy(), predictions.cpu().numpy()
+
+
+    def iterative_train(self, scaler, N):
+        df_train = pd.read_csv('../data_processing/train_gain_prof.csv')
+        beta = get_beams(self.in_shape, 60)
+        scaler = MinMaxScaler()        
         for k in tqdm(range(N), desc="Training Progress"):
-            ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(-5, 20))
+            ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(0, 20))
             y_train = ndf['Angle'].to_numpy()
             y_train = np.clip(y_train, -45, 45)
             y_train = np.digitize(y_train, bins=np.linspace(-45, 45, self.num_classes)) - 1
