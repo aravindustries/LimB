@@ -37,6 +37,7 @@ for snr in [-5, 0, 5, 10, 15]:
     y = np.arange(-45, 46)
 
     plt.plot(y, y_hat-y, label=f"Agile (SNR={snr})")
+
 plt.title("Agile Angle Error")
 plt.xlabel("True Angle (°)")
 plt.ylabel("Estimated Angle Error (°)")
