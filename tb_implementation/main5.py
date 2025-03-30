@@ -1,4 +1,3 @@
-#%%
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -11,7 +10,7 @@ import os
 
 df_test = pd.read_csv('../data/spacial_profiles/mid_snr/gp_9.01.csv')
 
-n_beams = np.array([8])
+n_beams = np.array([4])
 num_classes = 91  # Adjust based on desired resolution
 
 snr_ranges = ['ultra_low_snr', 'low_snr', 'mid_low_snr', 'mid_snr', 'mid_high_snr']
@@ -43,7 +42,7 @@ for n in n_beams:
     scaler = MinMaxScaler()
     X_test = scaler.fit_transform(df_test.iloc[:, 2:65].iloc[:, beta])
 
-    dmlp.iterative_train(scaler=scaler, N=10)
+    dmlp.iterative_train(scaler=scaler, N=100)
 
     plt.figure()
 
@@ -54,6 +53,3 @@ for n in n_beams:
     plt.legend()
     plt.show()
     plt.savefig('Error{n}.png')
-    
-
-# %%
