@@ -3,22 +3,24 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.signal import welch
+from sklearn.preprocessing import MinMaxScaler
+import random
 
-df = pd.read_csv('../../../beamtracking17/combined_beam_iq.csv', header=None)
+df = pd.read_csv('../../../beamtracking15/final_beam_iq.csv', header=None)
 
-print(df.head(14))
+#print(df.head(14))
 
 df.drop(df.columns[1], axis=1, inplace=True)
 
-print(df.iloc[45])
+#print(df.iloc[45])
 
 angles = df.iloc[:, 0].values  # First column (angle)
 beams = df.iloc[:, 1].values   # Second column (beam)
 complex_data = df.iloc[:, 2:].values  # Complex data values starting from the third column
 
-print(angles)
-print(beams)
-print(complex_data.shape)
+#print(angles)
+#print(beams)
+#print(complex_data.shape)
 
 # Get the unique angles and beams
 unique_angles = np.unique(angles)
@@ -44,46 +46,102 @@ for i, angle in enumerate(unique_angles):
             # If multiple rows match, you can average them or take the first one
             result[i, j, :] = complex_data[mask, :][0]  # Take the first row that matches
 
-print(result[0, 45, :])
+#print(result[0, 45, :])
 
-fs = 1  # Adjust if necessary (sampling rate)
-nfft = 1024  # High resolution for better frequency bin separation
-frequencies, psd = welch(iq_data, fs=fs, nperseg=256, nfft=nfft, window='hann', return_onesided=True)
+def viz_iq_profile(result):
+    gp = np.zeros((91, 63))
+    for i in range(91):
+        for j in range(63):
+            gp[i, j] = np.var(result[i, j, :])
 
-# Find the peak frequency (single-tone signal)
-peak_idx = np.argmax(psd)
-peak_freq = frequencies[peak_idx]
+    angs = np.arange(0, 91)
+    beams = np.arange(0, 63) 
+    X, Y = np.meshgrid(beams, angs)
 
-# Define a small bandwidth around the peak for signal power estimation
-num_bins = 5  # Adjust for better peak isolation
-low_idx = max(0, peak_idx - num_bins)
-high_idx = min(len(frequencies) - 1, peak_idx + num_bins)
+    fig = plt.figure(figsize=(10,7))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(X, Y, gp, cmap='jet', edgecolor='none')
 
-# Create a mask for the signal power region
-signal_mask = np.zeros_like(psd, dtype=bool)
-signal_mask[low_idx:high_idx + 1] = True
+    ax.set_xlabel("Beam")
+    ax.set_ylabel("Angle")
+    ax.set_zlabel("Gain")
 
-# Compute signal power
-signal_power = np.trapz(psd[signal_mask], frequencies[signal_mask])
+#viz_iq_profile(result)
 
-# Estimate noise power using the median noise floor
-noise_floor = np.median(psd[~signal_mask])
-noise_power = noise_floor * (frequencies[-1] - frequencies[0])
+def single_mask(decay_rate=0.01, tolerance=2):
+    mask = np.zeros((91, 63))
 
-# Compute SNR in dB
-snr_db = 10 * np.log10(signal_power / noise_power)
+    A = 62
+    B = -90
+    C = 0
+    norm_factor = np.sqrt(A**2 + B**2)  # Precompute normalization factor
 
-print(f"SNR (Fixed PSD Method): {snr_db:.2f} dB")
+    for i in range(91):
+        for j in range(1, 63):
+            distance = abs(A * i + B * j + C) / norm_factor
+            
+            # Ensure distance is explicitly a float
+            distance = float(distance)
 
-# Plot PSD with corrections
-plt.figure(figsize=(10, 5))
-plt.semilogy(frequencies, psd, label="PSD", linewidth=2)
-plt.axvline(x=peak_freq, color='r', linestyle='--', label="Tone Frequency")
-plt.fill_between(frequencies, psd, where=signal_mask, color='g', alpha=0.5, label="Signal Power")
-plt.fill_between(frequencies, psd, where=~signal_mask, color='b', alpha=0.3, label="Noise Power")
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Power Spectral Density (dB)')
-plt.title('PSD of IQ Data (Fixed Wrap-Around Issue)')
-plt.legend()
-plt.grid()
-plt.show()# Extract the IQ data for the selected angle and beam
+            # Debugging statement to check `distance` values
+            # print(f"i={i}, j={j}, distance={distance}")
+
+            # If the point is nearly on the line, set it exactly to 1
+            if distance < tolerance:
+                mask[i, j] = 1.0
+                if i > 30 and i < 47:
+                    if j > 20 and j < 37:
+                        mask[i,j] = np.random.uniform(0.7, 1)
+            else:
+                mask[i, j] = np.exp(-decay_rate * distance) * random.random()
+    mask[45, :] = np.zeros(63)
+    idx = np.arange(91)
+    distances = np.abs(idx - 45)
+    mask[:, 0] = np.exp(-decay_rate * distances)
+    # Ensure df has the correct number of rows before adding mask
+    return mask
+
+
+def apply_rayleigh_fading_and_noise(data, snr_db=10):
+
+    num_angles, num_beams, num_values = data.shape
+    
+    # Normalize the complex data by its RMS value
+    signal_power = np.mean(np.abs(data) ** 2)  # Average power before normalization
+    data_norm = data / np.max(data)  # Normalize so power is 1
+
+    # Generate Rayleigh fading coefficients (complex Gaussian)
+    rayleigh_fading = (np.random.normal(0, 1, (num_angles, num_beams, num_values)) + 
+                       1j * np.random.normal(0, 1, (num_angles, num_beams, num_values))) / np.sqrt(2)
+    snr = 10 ** ((snr_db) / 10)
+
+    # Compute noise power based on SNR
+    noise_power = 1 / snr  # Since signal power is now 1
+
+    # Generate complex Gaussian noise
+    noise = np.sqrt(noise_power / 2) * (np.random.randn(num_angles, num_beams, num_values) + 
+                                        1j * np.random.randn(num_angles, num_beams, num_values))
+
+    # Apply Rayleigh fading and noise
+    received_signal = rayleigh_fading * data_norm + noise
+
+    return received_signal
+
+
+def get_aug_data(snr):
+    result_masked = np.zeros(result.shape)
+
+    mask = single_mask()
+    for i in range(1024):
+        result_masked[:,:,i] = np.multiply(result[:,:,i], mask)
+
+    snr_db = 10 # Define desired SNR
+    result_noisy = apply_rayleigh_fading_and_noise(result_masked, snr_db)
+
+    return result_noisy
+
+
+
+
+
+
