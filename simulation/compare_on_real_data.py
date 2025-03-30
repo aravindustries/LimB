@@ -30,6 +30,7 @@ for snr in [-5, 0, 5, 10, 15]:
 
     agile = Agile(angles[indexes])
 
+<<<<<<< HEAD
     X = df[[f"Beam_{i}" for i in indexes]].values
     print(X.shape)
     y_hat = agile.call(X)
@@ -43,3 +44,10 @@ plt.xlabel("True Angle (°)")
 plt.ylabel("Estimated Angle Error (°)")
 plt.legend()
 plt.show()
+=======
+X = df[[f"Beam_{i}" for i in indexes]].values
+print(X.shape)
+y_hat = agile.call(X)
+
+# %%
+>>>>>>> 034f0d5 (Stashing local changes before rebase)

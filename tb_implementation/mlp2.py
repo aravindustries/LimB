@@ -92,6 +92,7 @@ class doaMLPClassifier():
             logits = self.model(X_test_tensor)
             predictions = torch.argmax(logits, dim=1)
         
+        
         return y_test_tensor.cpu().numpy(), predictions.cpu().numpy()
 
 

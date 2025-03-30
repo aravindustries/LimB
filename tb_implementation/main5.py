@@ -8,8 +8,6 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import os
 
-df_test = pd.read_csv('../data/spacial_profiles/mid_snr/gp_9.01.csv')
-
 n_beams = np.array([4])
 num_classes = 91  # Adjust based on desired resolution
 
@@ -40,7 +38,6 @@ for n in n_beams:
     y_test = np.digitize(y_test, bins=np.linspace(-45, 45, num_classes)) - 1 
     beta = mlp2.get_beams(n, 60)
     scaler = MinMaxScaler()
-    X_test = scaler.fit_transform(df_test.iloc[:, 2:65].iloc[:, beta])
 
     dmlp.iterative_train(scaler=scaler, N=100)
 
