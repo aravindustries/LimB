@@ -18,7 +18,7 @@ def generate_data(
     X = np.zeros((num_samples, 2 * Nr, N_snapshots), dtype=np.float32)
     y = np.zeros(num_samples)
 
-    num_of_paths = np.random.randint(num_of_paths_range[0], num_of_paths_range[1]+1)
+    num_of_paths = np.random.randint(num_of_paths_range[0], num_of_paths_range[1] + 1)
     emph = 0.5 ** np.arange(num_of_paths)
 
     for j in range(num_of_paths):
@@ -63,23 +63,30 @@ def generate_data(
 
 
 if __name__ == "__main__":
-    Nr=16
+    Nr = 16
 
-    X, _ = generate_data(1, Nr=Nr, N_snapshots=512, snr_range=(0, 0), num_of_paths_range=(2, 2))
-    X = X[0, :Nr] + 1j * X[0, Nr:] # combine I and Q components into a single complex array
+    X, _ = generate_data(
+        1, Nr=Nr, N_snapshots=512, snr_range=(0, 0), num_of_paths_range=(2, 2)
+    )
+    X = (
+        X[0, :Nr] + 1j * X[0, Nr:]
+    )  # combine I and Q components into a single complex array
 
-    theta_scan = np.linspace(-1*np.pi/2, np.pi/2, 1000)
+    theta_scan = np.linspace(-1 * np.pi / 2, np.pi / 2, 1000)
     results = []
     for theta_i in theta_scan:
-        w = np.exp(-2j * np.pi * d * np.arange(Nr) * np.sin(theta_i)) # Conventional, aka delay-and-sum, beamformer
+        w = np.exp(
+            -2j * np.pi * d * np.arange(Nr) * np.sin(theta_i)
+        )  # Conventional, aka delay-and-sum, beamformer
         # breakpoint()
-        X_weighted = w.conj().T @ X # apply our weights. remember X is 3x10000
-        results.append(10*np.log10(np.var(X_weighted))) # power in signal, in dB so its easier to see small and large lobes at the same time
-    results -= np.max(results) # normalize (optional)
+        X_weighted = w.conj().T @ X  # apply our weights. remember X is 3x10000
+        results.append(
+            10 * np.log10(np.var(X_weighted))
+        )  # power in signal, in dB so its easier to see small and large lobes at the same time
+    results -= np.max(results)  # normalize (optional)
 
-    plt.plot(theta_scan*180/np.pi, results) # lets plot angle in degrees
+    plt.plot(theta_scan * 180 / np.pi, results)  # lets plot angle in degrees
     plt.xlabel("Theta [Degrees]")
     plt.ylabel("DOA Metric")
     plt.grid()
     plt.show()
-
