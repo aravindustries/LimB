@@ -10,20 +10,20 @@ import pandas as pd
 import utils2
 
 def get_beams(n, spread=49):
-    # return np.linspace(32-(spread/2), 32+(spread/2), n, dtype=int)
-    return np.round(np.linspace(11, 52, n)).astype(int)
+    return np.linspace(32-(spread/2), 32+(spread/2), n, dtype=int)
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, hidden_dim=384):
+    def __init__(self, input_dim, hidden_dim=256):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.bn1 = nn.LayerNorm(hidden_dim)
+        self.bn1 = nn.BatchNorm1d(hidden_dim)
         self.fc2 = nn.Linear(input_dim, hidden_dim)
-        self.bn2 = nn.LayerNorm(hidden_dim)
+        self.bn2 = nn.BatchNorm1d(hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, 1)
-        self.bn3 = nn.LayerNorm(1)
+        self.bn3 = nn.BatchNorm1d(1)
+        self.fc4 = nn.Linear(input_dim, 1)
         self.silu = nn.SiLU()
-        self.dropout = nn.Dropout(p=0.7)
+        self.dropout = nn.Dropout(p=0.9)
 
     def forward(self, x):
         x1 = self.silu(self.fc1(x))
@@ -33,7 +33,9 @@ class MLP(nn.Module):
         x3 = x1 * x2
         x3 = self.dropout(x3)
         x4 = self.fc3(x3)
-        return x4
+        x4 = self.bn3(x4)
+        x5 = self.fc4(x)  # Final output layer
+        return x4 + x5
 
 
 class doaMLP():
@@ -58,8 +60,7 @@ class doaMLP():
             for inputs, targets in train_loader:
                 optimizer.zero_grad()
                 outputs = self.model(inputs)
-                l2_norm = sum(p.abs().square().sum() for p in self.model.parameters())
-                loss = self.criterion(outputs, targets) + 1e-5 * l2_norm
+                loss = self.criterion(outputs, targets)
                 loss.backward()
                 optimizer.step()
                 running_loss += loss.item()
@@ -98,16 +99,12 @@ class doaMLP():
     def iterative_train(self, df_train, scaler, N):    
         beta = get_beams(self.in_shape, 50)
         scaler = MinMaxScaler()
-
-        for lr, b in tqdm([(l, 256) for l in 0.1 ** np.linspace(1.2, 2.2, 15)]):
-            for k in range(N):
-                ndf_combined = []
-                for _ in range(25):
-                    ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(0, 12))
-                    ndf_combined.append(scaler.fit_transform(ndf.iloc[:, 2:65].iloc[:, beta]))
-                X_train = np.vstack(ndf_combined)
-                y_train = np.hstack([np.arange(-45, 46) for _ in range(25)])
-                # X_train = scaler.fit_transform(ndf.iloc[:, 2:65].iloc[:, beta])
-                loss = self.train_model(X_train, y_train, lr=lr, b=b, epochs=1)
+        
+        for lr, b in [(0.1, 16), (0.01, 64), (0.001, 256), (0.0001, 1024)]:
+            for k in tqdm(range(N), desc="Training Progress"):
+                ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(-5, 20))
+                y_train = ndf['Angle'].to_numpy()
+                X_train = scaler.fit_transform(ndf.iloc[:, 2:65].iloc[:, beta])
+                loss = self.train_model(X_train, y_train, lr=lr, b=b, epochs=30)
 # class data_processor():
 #    def __init__(self, csv_file):
