@@ -116,3 +116,5 @@ plot_gain_profile(df_existing, "Existing Gain Profile")
 
 # Plot new gain profile with mixed data
 plot_gain_profile(df_combined, "New Gain Profile (Mixed)")
+
+# %%

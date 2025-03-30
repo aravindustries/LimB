@@ -148,8 +148,8 @@ def adjust_noise_to_target_snr(original_df, target_snr, initial_K_multipath=5, i
     
     while iteration < max_iterations:
         # Reset gain profile and apply multipath and AWGN separately
-        temp_df = add_multipath_rician(original_df, K_multipath)
-        noisy_df = add_noise(temp_df, K_awgn)
+        #temp_df = add_multipath_rician(original_df, K_multipath)
+        noisy_df = add_noise(original_df, K_awgn)
 
         # Compute SNR
         current_snr = get_snr(original_df, noisy_df)

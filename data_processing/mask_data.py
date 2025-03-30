@@ -65,7 +65,7 @@ def get_avg_gains():
     viz_df(df_avg, 'df_avg.png')
     return df_avg
 
-def single_mask(df, decay_rate=0.1, tolerance=1e-2):
+def single_mask(df, decay_rate=0.05, tolerance=1):
     mask = np.zeros((91, 63))
 
     A = 62
@@ -74,7 +74,7 @@ def single_mask(df, decay_rate=0.1, tolerance=1e-2):
     norm_factor = np.sqrt(A**2 + B**2)  # Precompute normalization factor
 
     for i in range(91):
-        for j in range(63):
+        for j in range(1, 63):
             distance = abs(A * i + B * j + C) / norm_factor
             
             # Ensure distance is explicitly a float
@@ -88,7 +88,10 @@ def single_mask(df, decay_rate=0.1, tolerance=1e-2):
                 mask[i, j] = 1.0
             else:
                 mask[i, j] = np.exp(-decay_rate * distance)
-
+    mask[45, :] = np.zeros(63)
+    idx = np.arange(91)
+    distances = np.abs(idx - 45)
+    mask[:, 0] = np.exp(-decay_rate * distances)
     # Ensure df has the correct number of rows before adding mask
     if df.shape[0] != 91:
         raise ValueError(f"DataFrame row count ({df.shape[0]}) does not match expected size (91).")
@@ -105,7 +108,7 @@ def single_mask(df, decay_rate=0.1, tolerance=1e-2):
 
 #viz_df(mask_df1, 'mask1.png')
 
-def apply_mask(df, tolerance=1e-2, decay_rate=0.05):
+def apply_mask(df, tolerance=0.5, decay_rate=0.05):
     mask = np.zeros((91, 63))
     # Define line equation parameters: Ax + By + C = 0
     A = 62
@@ -113,18 +116,20 @@ def apply_mask(df, tolerance=1e-2, decay_rate=0.05):
     C = 0
     norm_factor = np.sqrt(A**2 + B**2)  # Precompute normalization factor
 
+    #mask[45, :] = np.zeros(63)
+    idx = np.arange(91)
+    distances = np.abs(idx - 46)
+    mask[:, 0] = np.exp(-decay_rate * distances)
     # Compute distances and apply exponential decay
     for i in range(91):
-        for j in range(63):
+        for j in range(1, 63):
             distance = abs(A * i + B * j + C) / norm_factor
             
             # Ensure distance is explicitly a float
             distance = float(distance)
+            if i == 46:
+                distance += 10
 
-            # Debugging statement to check `distance` values
-            # print(f"i={i}, j={j}, distance={distance}")
-
-            # If the point is nearly on the line, set it exactly to 1
             if distance < tolerance:
                 mask[i, j] = 1.0
             else:
@@ -147,12 +152,17 @@ def apply_mask(df, tolerance=1e-2, decay_rate=0.05):
 #print(filt_df.head)
 
 #filt_df.to_csv("train_gain_prof.csv", index=False)
-
+#df_avg = get_avg_gains()
+#df_mask = single_mask(df_avg)
+#viz_df_heatmap(df_mask, 'df_mask')
 df_avg = get_avg_gains()
-viz_df_heatmap(df_avg, 'heatmap1')
+viz_df_heatmap(df_avg, 'hveatmap1')
 df_filt = apply_mask(df_avg)
 viz_df(df_filt, 'filtered_df_champ.png')
 viz_df_heatmap(df_filt, 'heatmap2')
 df_filt.to_csv("train_gain_prof.csv", index=False)
+
+
+# %
 
 # %%

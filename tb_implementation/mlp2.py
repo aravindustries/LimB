@@ -43,7 +43,7 @@ class doaMLPClassifier():
         y_train_tensor = torch.tensor(y_train, dtype=torch.long).to(device)
 
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-        train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+        train_loader = DataLoader(train_dataset, batch_size=2048, shuffle=True)
 
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
@@ -75,13 +75,11 @@ class doaMLPClassifier():
 
 
     def iterative_train(self, scaler, N):
-        df_train = pd.read_csv('../data_processing/train_gain_prof.csv')
-        beta = get_beams(self.in_shape, 60)
-        scaler = MinMaxScaler()        
+        df_train = pd.read_csv('../data/spacial_profiles/mid_snr/gp_10.12.csv')
+        beta = get_beams(self.in_shape, 60)    
         for k in tqdm(range(N), desc="Training Progress"):
-            ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(0, 20))
+            ndf, snr = utils2.adjust_noise_to_target_snr(df_train, np.random.uniform(0, 10))
             y_train = ndf['Angle'].to_numpy()
-            y_train = np.clip(y_train, -45, 45)
             y_train = np.digitize(y_train, bins=np.linspace(-45, 45, self.num_classes)) - 1
             X_train = scaler.fit_transform(ndf.iloc[:, 2:65].iloc[:, beta])
-            loss = self.train_model(X_train, y_train, epochs=300)
+            loss = self.train_model(X_train, y_train, epochs=50)

@@ -9,9 +9,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import os
 
-df_test = pd.read_csv('../data/spacial_profiles/mid_snr/gp_9.01.csv')
-
-n_beams = np.array([8])
+n_beams = np.array([4])
 num_classes = 91  # Adjust based on desired resolution
 
 snr_ranges = ['ultra_low_snr', 'low_snr', 'mid_low_snr', 'mid_snr', 'mid_high_snr']
@@ -24,6 +22,7 @@ def avg_error_eval(dmlp, scaler, beta, snr_range):
     for csv_file in csv_files:
         file_path = os.path.join(directory, csv_file)
         df_test = pd.read_csv(file_path)
+        y_test = df_test['Angle'].to_numpy()
         X_test = scaler.fit_transform(df_test.iloc[:, 2:65].iloc[:, beta])
         y_actual, y_pred =  dmlp.eval_model(X_test, y_test)
         y_hat = np.subtract(y_pred, 45)
@@ -37,13 +36,10 @@ def avg_error_eval(dmlp, scaler, beta, snr_range):
 
 for n in n_beams:
     dmlp = mlp2.doaMLPClassifier(n, num_classes)
-    y_test = df_test['Angle'].to_numpy()
-    y_test = np.digitize(y_test, bins=np.linspace(-45, 45, num_classes)) - 1 
     beta = mlp2.get_beams(n, 60)
     scaler = MinMaxScaler()
-    X_test = scaler.fit_transform(df_test.iloc[:, 2:65].iloc[:, beta])
 
-    dmlp.iterative_train(scaler=scaler, N=10)
+    dmlp.iterative_train(scaler=scaler, N=300)
 
     plt.figure()
 
@@ -53,7 +49,5 @@ for n in n_beams:
 
     plt.legend()
     plt.show()
-    plt.savefig('Error{n}.png')
+    plt.savefig(f'Error{n}4.png')
     
-
-# %%
