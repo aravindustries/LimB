@@ -5,7 +5,7 @@ from scipy.signal import welch
 from sklearn.preprocessing import MinMaxScaler
 import random
 
-df = pd.read_csv("Training_Beam_IQ.csv", header=None)
+df = pd.read_csv("./iq_profiles/beam_iq_snr_16.88.csv", header=None)
 
 # print(df.head(14))
 
@@ -144,6 +144,6 @@ def get_aug_data(snr):
     mask = single_mask()
     for i in range(1024):
         result_masked[:, :, i] = np.multiply(result[:, :, i], mask)
-    result_noisy = apply_rayleigh_fading_and_noise(result_masked, snr)
+    result_noisy = apply_rayleigh_fading_and_noise(result, snr)
 
     return result_noisy

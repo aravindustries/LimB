@@ -16,20 +16,26 @@ class AgileCNN(nn.Module):
 
         self.feature_extractor = nn.Sequential(
             nn.Conv1d(2, 32, kernel_size=7, stride=2, padding=3),
-            nn.BatchNorm1d(32),
+            # nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+            # nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+            nn.Dropout(0.1),
             nn.Conv1d(32, 64, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
+            # nn.BatchNorm1d(64),
+            # nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.AdaptiveAvgPool1d(1),
+            nn.Dropout(0.1),
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(128, 128), nn.ReLU(), nn.Dropout(0.5), nn.Linear(128, num_classes)
+            # nn.Linear(128, 128),
+            # nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(128, num_classes),
         )
 
     def forward(self, x):
@@ -92,15 +98,16 @@ def train_agile_model(
     epochs=30,
     device=torch.device("cpu"),
     learning_rate=0.001,
+    weight_decay=1e-4,
 ):
     print(f"Training on device: {device}")
 
     model = model.to(device)
-    best_val_acc = 0.0
-    best_model_state = None
+    # best_val_acc = 0.0
+    # best_model_state = None
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="max", factor=0.5, patience=3, verbose=True
@@ -155,14 +162,14 @@ def train_agile_model(
             f"Val Acc: {val_acc:.2f}%"
         )
 
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            best_model_state = model.state_dict().copy()
-            print(f"New best model: {val_acc:.2f}%")
+        # if val_acc > best_val_acc:
+        #     best_val_acc = val_acc
+        #     best_model_state = model.state_dict().copy()
+        #     print(f"New best model: {val_acc:.2f}%")
 
-    if best_model_state:
-        model.load_state_dict(best_model_state)
-        print(f"Loaded best model with validation accuracy: {best_val_acc:.2f}%")
+    # if best_model_state:
+    #     model.load_state_dict(best_model_state)
+    #     print(f"Loaded best model with validation accuracy: {best_val_acc:.2f}%")
 
     return model
 
@@ -187,12 +194,12 @@ def evaluate_and_plot(model, test_data, test_labels, num_beams, device):
     print(f"Test Accuracy: {accuracy:.2f}%")
     print(f"Mean Absolute Error: {mae:.2f} degrees")
 
-    angle_values = np.arange(-32, 33)  # -32 to +32 degrees
+    angle_values = np.arange(-45, 46)  # -32 to +32 degrees
     accuracy_by_angle = []
     mae_by_angle = []
 
     for angle_idx, angle in enumerate(angle_values):
-        label_value = angle + 32  # Convert from angle to label (0-64)
+        label_value = angle + 45  # Convert from angle to label (0-64)
         mask = labels_np == label_value
 
         if np.sum(mask) > 0:

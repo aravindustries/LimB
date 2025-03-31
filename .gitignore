@@ -26,3 +26,8 @@ images/
 
 *.ignore
 *.ignore.py
+
+Combined_Beam_IQ.csv
+Training_Beam_IQ.csv
+
+iq_profiles/

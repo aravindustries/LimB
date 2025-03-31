@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from scipy.signal import welch
 
 
-def dataIn(file="Combined_Beam_IQ.csv"):
+def dataIn(file="Training_Beam_IQ.csv"):
 
-    df = pd.read_csv("Combined_Beam_IQ.csv", header=None)
+    df = pd.read_csv(file, header=None)
 
     print(df.head(14))
 
@@ -51,7 +51,7 @@ def dataIn(file="Combined_Beam_IQ.csv"):
                 result[i, j, :] = complex_data[mask, :][
                     0
                 ]  # Take the first row that matches
-
+    # breakpoint()
     return result
 
 

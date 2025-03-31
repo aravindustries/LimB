@@ -2,9 +2,10 @@ import numpy as np
 import torch
 from parse_iq import dataIn
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
 from iq_psd import *
-
+from tqdm import tqdm
+from cnnc import CNN
 
 def normalize_data(X):
 
@@ -22,15 +23,15 @@ def normalize_data(X):
     return X_norm
 
 
-def prepare_data_for_cnn(file_path="Combined_Beam_IQ.csv", num_beams=4, test=True):
+def prepare_data_for_cnn(file_path="Combined_Beam_IQ.csv", num_beams=4, train=True, x=10):
 
-    if test:
-        data = dataIn(file_path)
+    if train:
+        data = get_aug_data(x)
     else:
-        data = get_aug_data(-10)
+        data = dataIn(file_path)
 
     num_angles, total_beams, signal_length = data.shape
-    print(f"Parsed data shape: {data.shape}")
+    # print(f"Parsed data shape: {data.shape}")
 
     original_angles = np.linspace(-45, 45, num_angles)
 
@@ -44,9 +45,9 @@ def prepare_data_for_cnn(file_path="Combined_Beam_IQ.csv", num_beams=4, test=Tru
     clipped_data = data[valid_indices]
 
     selected_beams = np.linspace(0, total_beams - 1, num_beams, dtype=int)
-    print(f"Selected beams: {selected_beams}")
-    print(f"Valid angles range: {clipped_angles.min()} to {clipped_angles.max()}")
-    print(f"Number of valid angles: {len(clipped_angles)}")
+    # print(f"Selected beams: {selected_beams}")
+    # print(f"Valid angles range: {clipped_angles.min()} to {clipped_angles.max()}")
+    # print(f"Number of valid angles: {len(clipped_angles)}")
 
     samples_per_beam = 512 // num_beams
 
@@ -75,9 +76,9 @@ def prepare_data_for_cnn(file_path="Combined_Beam_IQ.csv", num_beams=4, test=Tru
 
             current_position += actual_samples
 
-    print(f"Processed data shape: {X.shape}")
-    print(f"Labels shape: {y.shape}")
-    print(f"Unique labels: {np.unique(y)}")
+    # print(f"Processed data shape: {X.shape}")
+    # print(f"Labels shape: {y.shape}")
+    # print(f"Unique labels: {np.unique(y)}")
 
     X = normalize_data(X)
 
@@ -113,46 +114,48 @@ def prepare_data_for_cnn(file_path="Combined_Beam_IQ.csv", num_beams=4, test=Tru
 #     return train_loader, test_loader, X_train, y_train, X_test, y_test, device
 
 if __name__ == "__main__":
-    X, y = prepare_data_for_cnn(
-        file_path="Combined_Beam_IQ.csv", num_beams=4, test=False
-    )
-    X_test, y_test = prepare_data_for_cnn(
-        file_path="Combined_Beam_IQ.csv", num_beams=4, test=True
-    )
 
-    print(f"Total samples available: {len(y)}")
-    print(f"Unique angle labels: {np.unique(y)}")
+    # print(get_aug_data())
 
+    from agile_cnn import AgileCNN, train_agile_model, evaluate_and_plot
+    
     device = torch.device(
         "cuda"
         if torch.cuda.is_available()
         else "mps" if torch.backends.mps.is_available() else "cpu"
     )
-
-    X_tensor = torch.FloatTensor(X).to(device)
-    y_tensor = torch.LongTensor(y).to(device)
-
-    X_test_tensor = torch.FloatTensor(X_test).to(device)
-    y_test_tensor = torch.LongTensor(y_test).to(device)
-
-    dataset = TensorDataset(X_tensor, y_tensor)
-    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-    batch_size = min(32, len(dataset))
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    test_data_loader = DataLoader(test_dataset, batch_size=batch_size)
-
-    from agile_cnn import AgileCNN, train_agile_model, evaluate_and_plot
-
     model = AgileCNN(num_beams=4, num_classes=91).to(device)
 
-    model = train_agile_model(
-        model,
-        data_loader,
-        test_data_loader,
-        epochs=200,
-        device=device,
-        learning_rate=0.001,
-    )
+    X_test, y_test = prepare_data_for_cnn(file_path="./iq_profiles/beam_iq_snr_16.88.csv", num_beams=4, train=False)
+    X_test_tensor = torch.FloatTensor(X_test).to(device)
+    y_test_tensor = torch.LongTensor(y_test).to(device)
+    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+    test_data_loader = DataLoader(test_dataset, batch_size=512)
+
+    iterations = 1000
+    all_datasets = []
+
+    for i in tqdm(range(iterations)):
+        X, y = prepare_data_for_cnn(file_path="./iq_profiles/beam_iq_snr_16.88.csv", num_beams=4, train=True)
+        X_tensor = torch.FloatTensor(X).to(device)
+        y_tensor = torch.LongTensor(y).to(device)
+        current_dataset = TensorDataset(X_tensor, y_tensor)
+        all_datasets = [current_dataset]
+        combined_dataset = ConcatDataset(all_datasets)
+        train_data_loader = DataLoader(combined_dataset, batch_size=512, shuffle=True)
+        
+        model = train_agile_model(
+            model,
+            train_data_loader,
+            test_data_loader,
+            epochs=10,
+            device=device,
+            learning_rate=0.001,
+        )
+        
+        print(f"=== Iteration {i+1}/{iterations} complete ===")
+        # accuracy, mae, _, _, _ = evaluate_and_plot(model, X_test, y_test, 4, device)
+        # print(f"Current accuracy: {accuracy:.2f}%, MAE: {mae:.2f} degrees")
 
     accuracy, mae, _, _, _ = evaluate_and_plot(model, X_test, y_test, 4, device)
     print(f"Accuracy on all data: {accuracy:.2f}%, MAE: {mae:.2f} degrees")
