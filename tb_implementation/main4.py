@@ -15,7 +15,7 @@ from agile import Agile
 df_train = pd.read_csv('../data_processing/train_gain_prof.csv')
 
 
-boolean = False
+boolean = True
 
 n_beams = 4 if boolean else 12
 dmlp = mlp.doaMLP(n_beams)
@@ -102,7 +102,7 @@ title_size = 17
 other_size = 15
 
 if boolean:
-    fig, axes = plt.subplots(2, 1, figsize=(10, 16))
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 
     axes[0].plot([-45, 45], [0, 0], 'k--')
     for plot in ['low_snr', 'mid_low_snr', 'mid_high_snr']:
@@ -110,7 +110,7 @@ if boolean:
     axes[0].tick_params(labelsize=other_size)
     axes[0].set_xlabel("Direction of Arrival (°)", fontsize=other_size)
     axes[0].set_ylabel("Error (°)", fontsize=other_size)
-    axes[0].set_ylim(-65, 65)
+    axes[0].set_ylim(-40, 40)
     axes[0].set_title("BeamSeek MLP", fontsize=title_size)
     axes[0].legend(fontsize=other_size)
     axes[0].grid(True)
@@ -122,7 +122,7 @@ if boolean:
     axes[1].tick_params(labelsize=other_size)
     axes[1].set_xlabel("Direction of Arrival (°)", fontsize=other_size)
     axes[1].set_ylabel("Error (°)", fontsize=other_size)
-    axes[1].set_ylim(-65, 65)
+    axes[1].set_ylim(-40, 40)
     axes[1].set_title("Correlation-Based Method", fontsize=title_size)
     axes[1].legend(fontsize=other_size)
     axes[1].grid(True)
@@ -131,7 +131,7 @@ if boolean:
     fig.subplots_adjust(top=0.93, hspace=0.17, left=0.1, right=0.95, bottom=0.1)
     # fig.suptitle(f'Direction of Arrival Estimation Error With {n_beams} Beams', fontsize=17)
 
-    plt.savefig(f"Figure_4.png")
+    plt.savefig(f"Figure_4_alt.png")
 else:
     fig, ax = plt.subplots(figsize=(10, 7))
 
