@@ -7,11 +7,14 @@ import pandas as pd
 from agile_testbed import Agile
 
 
-B = 4
+B = 16
 angles = np.hstack([[0], np.linspace(-45, 45, 62)])
 indexes = np.round(np.linspace(11, 52, B)).astype(int)
 agile = Agile(angles[indexes])
 
+# plt.plot([-45, 45], [0, 0], 'k--')  # Zero error line
+
+print(f"B = {B}")
 for path in ['low_snr', 'mid_high_snr', 'mid_low_snr', 'mid_snr', 'ultra_low_snr']:
     folder = os.path.join("../data/spacial_profiles", path)
     combined_df = pd.DataFrame()
@@ -31,11 +34,13 @@ for path in ['low_snr', 'mid_high_snr', 'mid_low_snr', 'mid_snr', 'ultra_low_snr
         y_err /= X.shape[0] // 91
 
     # err = np.abs(y_hat - np.arange(-45, 46))
-    plt.plot(np.arange(-45, 46), y_err, label=path)
+    print(f"{path}: {y_err[15:-15].mean()}")
+#     plt.plot(np.arange(-45, 46), y_err, label=path)
 
-# plt.plot(np.arange(-45, 46), np.arange(-45, 46), 'k--', label="True Angle")
-plt.xlabel("True Angle (°)")
-plt.ylabel("Estimated Angle (°)")
-plt.title(f"Agile Angle Estimation ( B={B} )")
-plt.legend()
-plt.show()
+# # plt.plot(np.arange(-45, 46), np.arange(-45, 46), 'k--', label="True Angle")
+# plt.xlabel("True Angle (°)")
+# plt.ylabel("Estimated Angle (°)")
+# plt.title(f"Agile Angle Estimation ( B={B} )")
+# plt.legend()
+# # plt.show()
+# plt.savefig(f"agile_estimation_comparison_b={B}.png")

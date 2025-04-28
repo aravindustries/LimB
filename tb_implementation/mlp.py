@@ -64,7 +64,7 @@ class doaMLP():
                 optimizer.step()
                 running_loss += loss.item()
 
-        print(running_loss)
+        # print(running_loss)
         return running_loss
 
     def eval_model(self, X_test, y_test):
